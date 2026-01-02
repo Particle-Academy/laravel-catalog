@@ -356,7 +356,7 @@ laravel-catalog/
 
 1. **Install the package**:
    ```bash
-   composer require laravel-catalog/laravel-catalog
+   composer require particle-academy/laravel-catalog
    ```
 
 2. **Run migrations**:
@@ -412,7 +412,7 @@ When integrating into a test application:
 
 2. **Run composer update**:
    ```bash
-   composer update laravel-catalog/laravel-catalog
+   composer update particle-academy/laravel-catalog
    ```
 
 3. **Migrations load automatically** - no need to publish them

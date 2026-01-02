@@ -24,7 +24,7 @@ A Laravel package for managing Stripe catalog (Products and Prices) with a compl
 ### Step 1: Install via Composer
 
 ```bash
-composer require laravel-catalog/laravel-catalog
+composer require particle-academy/laravel-catalog
 ```
 
 The package will auto-discover and register its service provider.
@@ -405,7 +405,7 @@ When integrating into a test application:
            }
        ],
        "require": {
-           "laravel-catalog/laravel-catalog": "@dev"
+           "particle-academy/laravel-catalog": "@dev"
        }
    }
    ```

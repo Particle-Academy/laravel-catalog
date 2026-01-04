@@ -28,3 +28,4 @@ class ProductFeatureFactory extends Factory
         ];
     }
 }
+

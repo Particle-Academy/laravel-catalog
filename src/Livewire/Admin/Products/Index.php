@@ -5,6 +5,7 @@ namespace LaravelCatalog\Livewire\Admin\Products;
 use Illuminate\Contracts\View\View;
 use Illuminate\Pagination\LengthAwarePaginator;
 use LaravelCatalog\Models\Product;
+use LaravelCatalog\Models\ProductFeature;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -88,6 +89,7 @@ class Index extends Component
         }
 
         $this->loadStorefrontSettings();
+        $this->loadCatalogFeatures();
     }
 
     public function render(): View
@@ -175,7 +177,57 @@ class Index extends Component
 
     public function saveCatalogFeatures(): void
     {
-        // TODO: Implement feature settings save logic
+        foreach ($this->catalogFeatureSettings as $featureId => $settings) {
+            $feature = ProductFeature::find($featureId);
+            if ($feature) {
+                $feature->update([
+                    'name' => $settings['name'] ?? $feature->name,
+                ]);
+
+                // Update config with defaults if provided
+                $config = $feature->config ?? [];
+                if (isset($settings['default_enabled'])) {
+                    $config['default_enabled'] = $settings['default_enabled'];
+                }
+                if (isset($settings['default_included_quantity'])) {
+                    $config['default_included_quantity'] = $settings['default_included_quantity'];
+                }
+                if (isset($settings['default_overage_limit'])) {
+                    $config['default_overage_limit'] = $settings['default_overage_limit'];
+                }
+                $feature->update(['config' => $config]);
+            }
+        }
+
+        session()->flash('message', 'Feature catalog defaults saved successfully.');
+        $this->loadCatalogFeatures(); // Reload to reflect changes
+    }
+
+    public function updatedActiveTab(): void
+    {
+        // Reload features when switching to features tab
+        if ($this->activeTab === 'features') {
+            $this->loadCatalogFeatures();
+        }
+    }
+
+    protected function loadCatalogFeatures(): void
+    {
+        $this->catalogFeatureSettings = [];
+
+        $features = ProductFeature::orderBy('key')->get();
+
+        foreach ($features as $feature) {
+            $config = $feature->config ?? [];
+            $this->catalogFeatureSettings[$feature->id] = [
+                'key' => $feature->key,
+                'name' => $feature->name,
+                'type' => $feature->type,
+                'default_enabled' => $config['default_enabled'] ?? false,
+                'default_included_quantity' => $config['default_included_quantity'] ?? null,
+                'default_overage_limit' => $config['default_overage_limit'] ?? null,
+            ];
+        }
     }
 
     public function saveStorefrontSettings(): void
@@ -254,4 +306,3 @@ class Index extends Component
         $this->productMetadataValues = [];
     }
 }
-

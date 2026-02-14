@@ -6,6 +6,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Pagination\LengthAwarePaginator;
 use LaravelCatalog\Models\Product;
 use LaravelCatalog\Models\ProductFeature;
+use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -52,7 +53,8 @@ class Index extends Component
 
     public ?string $recommendedPlanProductId = null;
 
-    public function getProductPricesProperty(): array
+    #[Computed]
+    public function productPrices(): array
     {
         if (! $this->editingProductId) {
             return [];

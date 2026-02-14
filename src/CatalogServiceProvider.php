@@ -36,10 +36,8 @@ class CatalogServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Configure FMS to use Catalog's ProductFeature model if FMS is installed
-        if (class_exists(\ParticleAcademy\Fms\FmsServiceProvider::class)) {
-            config(['fms.product_feature_model' => \LaravelCatalog\Models\ProductFeature::class]);
-        }
+        // Configure FMS to use Catalog's ProductFeature model
+        config(['fms.product_feature_model' => \LaravelCatalog\Models\ProductFeature::class]);
 
         // Load Cashier migrations (Catalog depends on Cashier)
         // Why: Since Catalog requires Cashier, we auto-load Cashier's migrations

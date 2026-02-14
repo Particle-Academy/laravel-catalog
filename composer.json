@@ -8,6 +8,7 @@
         "laravel/framework": "^11.0|^12.0",
         "laravel/cashier": "^15.0",
         "stripe/stripe-php": "^13.0|^16.0",
+        "particle-academy/laravel-fms": "^0.2",
         "livewire/livewire": "^3.0|^4.0"
     },
     "autoload": {

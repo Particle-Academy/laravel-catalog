@@ -4,6 +4,7 @@ namespace LaravelCatalog\Livewire\Admin\Products;
 
 use Illuminate\Contracts\View\View;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Gate;
 use LaravelCatalog\Models\Product;
 use LaravelCatalog\Models\ProductFeature;
 use Livewire\Attributes\Computed;
@@ -81,6 +82,24 @@ class Index extends Component
                 'active' => $price->active,
             ];
         })->toArray();
+    }
+
+    /**
+     * Authorize every Livewire request — mount, hydration, and every action.
+     *
+     * Why: Livewire mount() only runs on the initial render. Without a check
+     * that runs on every request, mutating actions (saveProduct, deleteProduct,
+     * syncProductNow, etc.) would be reachable by any authenticated user once
+     * the component is hydrated. boot() runs on every Livewire request, so
+     * the gate is enforced for every action.
+     *
+     * Consumers must define a `manageCatalog` Gate (typically in
+     * AppServiceProvider::boot()):
+     *   Gate::define('manageCatalog', fn ($user) => $user->is_admin);
+     */
+    public function boot(): void
+    {
+        Gate::authorize(config('catalog.admin_ability', 'manageCatalog'));
     }
 
     public function mount(): void

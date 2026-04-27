@@ -98,24 +98,18 @@ class CatalogServiceProvider extends ServiceProvider
 
     /**
      * Determine if UI components should be loaded.
-     * UI is enabled if:
-     * - enable_ui config is true, OR
-     * - views have been published (views exist in vendor/catalog)
+     *
+     * UI is enabled only if `catalog.enable_ui` is explicitly true. Previously
+     * the presence of published views also enabled the UI, which meant a
+     * consumer who ran `php artisan vendor:publish` to inspect or fork the
+     * views would inadvertently mount the admin Livewire component on
+     * /ctrl/products. Publishing is no longer sufficient — set
+     * `CATALOG_ENABLE_UI=true` (or `catalog.enable_ui = true` in config)
+     * to opt in.
      */
     protected function shouldLoadUi(): bool
     {
-        // Check if UI is explicitly enabled in config
-        if (config('catalog.enable_ui', false)) {
-            return true;
-        }
-
-        // Check if views have been published
-        $publishedViewsPath = resource_path('views/vendor/catalog');
-        if (file_exists($publishedViewsPath) && is_dir($publishedViewsPath)) {
-            return true;
-        }
-
-        return false;
+        return (bool) config('catalog.enable_ui', false);
     }
 }
 

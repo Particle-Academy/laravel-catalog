@@ -61,6 +61,21 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Admin Authorization Ability
+    |--------------------------------------------------------------------------
+    |
+    | The name of the Gate ability the admin Livewire components check on
+    | every request via `Gate::authorize($ability)`. Define the ability in
+    | your AppServiceProvider, e.g.:
+    |
+    |   Gate::define('manageCatalog', fn ($user) => $user->is_admin);
+    |
+    */
+
+    'admin_ability' => env('CATALOG_ADMIN_ABILITY', 'manageCatalog'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Admin Route Names
     |--------------------------------------------------------------------------
     |

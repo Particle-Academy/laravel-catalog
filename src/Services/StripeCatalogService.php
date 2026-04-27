@@ -92,11 +92,18 @@ class StripeCatalogService
                 'message' => sprintf('Success! Connected to Stripe. Found %d product(s) in your Stripe account.', count($products->data)),
                 'product_count' => count($products->data),
             ];
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
+            // Log the underlying Stripe error for operators, but return a
+            // generic message to callers — raw API errors can leak account
+            // identifiers, key prefixes, and other implementation details
+            // that admins shouldn't see in the UI.
+            Log::error('catalog.stripe.test_connection_failed', [
+                'message' => $e->getMessage(),
+            ]);
+
             return [
                 'success' => false,
-                'message' => 'Connection failed: '.$e->getMessage(),
-                'error' => $e->getMessage(),
+                'message' => 'Could not reach Stripe. Check your API credentials and try again.',
             ];
         }
     }

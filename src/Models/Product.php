@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use LaravelCatalog\Models\ProductFeature;
+use ParticleAcademy\Fms\Concerns\HasFeatureGroups;
 
 /**
  * Product model
@@ -18,7 +19,7 @@ use LaravelCatalog\Models\ProductFeature;
  */
 class Product extends Model
 {
-    use HasFactory, HasUlids, SoftDeletes;
+    use HasFactory, HasUlids, SoftDeletes, HasFeatureGroups;
 
     /**
      * The table associated with the model.

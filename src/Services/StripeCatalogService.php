@@ -19,7 +19,7 @@ class StripeCatalogService
 
     public function __construct()
     {
-        $this->stripe = new StripeClient(config('cashier.secret'));
+        $this->stripe = new StripeClient(['api_key' => config('cashier.secret')]);
     }
 
     /**

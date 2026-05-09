@@ -86,11 +86,12 @@ class CatalogServiceProvider extends ServiceProvider
             __DIR__.'/../resources/css/admin.css' => public_path('vendor/catalog/admin.css'),
         ], 'catalog-assets');
 
-        // Only load UI components if enabled
-        if ($this->shouldLoadUi()) {
-            // Load views
-            $this->loadViewsFrom(__DIR__.'/../resources/views', 'catalog');
+        // Views are namespaced (`catalog::`) and inert until referenced, so
+        // they're always registered. The Livewire component alias is the
+        // actual UI surface and stays gated on `catalog.enable_ui`.
+        $this->loadViewsFrom(__DIR__.'/../resources/views', 'catalog');
 
+        if ($this->shouldLoadUi()) {
             // Register Livewire component alias so AJAX requests can resolve it
             Livewire::component('laravel-catalog.livewire.admin.products', \LaravelCatalog\Livewire\Admin\Products\Index::class);
         }

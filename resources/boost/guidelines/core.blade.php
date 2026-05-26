@@ -1,6 +1,6 @@
 ## Laravel Catalog Package
 
-This package provides Stripe catalog (Products and Prices) management with an optional admin UI. All functionality is accessible via a facade, making it perfect for apps using their own UX. Plans are Products with recurring Prices - there is no separate Plan model.
+This package provides Stripe catalog (Products and Prices) management via a facade API. Built for apps that bring their own UI. Plans are Products with recurring Prices - there is no separate Plan model.
 
 ### Features
 
@@ -8,8 +8,7 @@ This package provides Stripe catalog (Products and Prices) management with an op
 - **Price Management**: Manage recurring (subscription) and one-time prices for products
 - **Plans Support**: Plans are simply Products with recurring Prices - no separate model needed
 - **Stripe Sync**: Automatic or manual synchronization with Stripe's catalog
-- **Facade API**: Complete programmatic access via `Catalog` facade - no UI required
-- **Optional Admin UI**: Complete Livewire-based admin interface (optional, requires publishing)
+- **Facade API**: Complete programmatic access via `Catalog` facade - bring your own UI
 - **Product Features**: Support for product features and feature configurations via FMS integration
 - **Checkout Integration**: Ready-to-use Stripe Checkout session creation for subscriptions and one-time payments
 
@@ -22,7 +21,6 @@ This package provides Stripe catalog (Products and Prices) management with an op
 - `src/Models/Price.php` - Price model for recurring and one-time pricing
 - `src/Models/ProductFeature.php` - Product features model for FMS integration
 - `src/Facades/Catalog.php` - Facade for accessing catalog functionality
-- `src/Livewire/Admin/Products/Index.php` - Admin UI component (optional)
 
 ### Core Concepts
 
@@ -43,12 +41,9 @@ Configure in `config/catalog.php`:
 @verbatim
 <code-snippet name="Catalog Configuration" lang="php">
 return [
-    'auto_sync' => env('CATALOG_AUTO_SYNC', false),
+    'auto_sync_stripe' => env('CATALOG_AUTO_SYNC_STRIPE', false),
     'queue_connection' => env('CATALOG_QUEUE_CONNECTION', 'default'),
-    'enable_ui' => env('CATALOG_ENABLE_UI', false),
-    'admin_route_prefix' => env('CATALOG_ADMIN_PREFIX', 'admin/catalog'),
-    'admin_middleware' => ['web', 'auth'],
-    'broadcasting_channel' => env('CATALOG_BROADCASTING_CHANNEL', 'catalog-sync'),
+    'broadcast_channel' => 'admin.products',
 ];
 </code-snippet>
 @endverbatim
@@ -235,6 +230,5 @@ if ($subscription) {
 - Use the Catalog facade for all operations to maintain consistency
 - Queue sync operations for better performance in production
 - Use metadata fields for custom product configurations
-- Enable UI only when needed - the package works without UI
 - Use Product Features with FMS for feature-based access control
 - Always handle Stripe API errors gracefully

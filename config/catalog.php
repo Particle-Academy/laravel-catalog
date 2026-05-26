@@ -3,19 +3,6 @@
 return [
     /*
     |--------------------------------------------------------------------------
-    | Enable UI
-    |--------------------------------------------------------------------------
-    |
-    | When enabled, the package will load Livewire components, views, and routes
-    | for the admin interface. Set to false to use only the facade/API.
-    | UI will also be enabled automatically if views are published.
-    |
-    */
-
-    'enable_ui' => env('CATALOG_ENABLE_UI', false),
-
-    /*
-    |--------------------------------------------------------------------------
     | Auto Sync to Stripe
     |--------------------------------------------------------------------------
     |
@@ -39,57 +26,6 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Admin Route Prefix
-    |--------------------------------------------------------------------------
-    |
-    | The prefix for admin routes. Defaults to 'ctrl'.
-    |
-    */
-
-    'admin_route_prefix' => env('CATALOG_ADMIN_PREFIX', 'ctrl'),
-
-    /*
-    |--------------------------------------------------------------------------
-    | Admin Route Middleware
-    |--------------------------------------------------------------------------
-    |
-    | Middleware to apply to admin routes.
-    |
-    */
-
-    'admin_middleware' => ['web', 'auth', 'superadmin'],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Admin Authorization Ability
-    |--------------------------------------------------------------------------
-    |
-    | The name of the Gate ability the admin Livewire components check on
-    | every request via `Gate::authorize($ability)`. Define the ability in
-    | your AppServiceProvider, e.g.:
-    |
-    |   Gate::define('manageCatalog', fn ($user) => $user->is_admin);
-    |
-    */
-
-    'admin_ability' => env('CATALOG_ADMIN_ABILITY', 'manageCatalog'),
-
-    /*
-    |--------------------------------------------------------------------------
-    | Admin Route Names
-    |--------------------------------------------------------------------------
-    |
-    | Route names for admin pages. These can be customized if your application
-    | uses different route names.
-    |
-    */
-
-    'admin_route_names' => [
-        'products_index' => 'admin.products.index',
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
     | Broadcasting Channel
     |--------------------------------------------------------------------------
     |
@@ -99,4 +35,3 @@ return [
 
     'broadcast_channel' => 'admin.products',
 ];
-

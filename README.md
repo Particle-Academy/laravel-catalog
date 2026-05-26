@@ -1,7 +1,7 @@
 [![Powered by Tynn](https://img.shields.io/endpoint?url=https%3A%2F%2Ftynn.ai%2Fo%2Fparticle-academy%2Flaravel-catalog%2Fbadge.json)](https://tynn.ai/o/particle-academy/laravel-catalog)
 # Laravel Catalog Package
 
-A Laravel package for managing Stripe catalog (Products and Prices) with an optional admin UI. All functionality is accessible via a facade, making it perfect for apps using their own UX.
+A Laravel package for managing Stripe catalog (Products and Prices) via a facade API. Built for apps that bring their own UI.
 
 > **Important**: Every Product must have at least one Price before it can be synced to Stripe. Plans are Products with recurring Prices - there is no separate Plan model.
 
@@ -21,8 +21,7 @@ A Laravel package for managing Stripe catalog (Products and Prices) with an opti
   - [Working with Plans](#working-with-plans)
   - [Syncing to Stripe](#syncing-to-stripe)
   - [Creating Checkout Sessions](#creating-checkout-sessions)
-- [Creating Your Own Admin UI](#creating-your-own-admin-ui)
-- [Admin Interface (Published UI)](#admin-interface-published-ui)
+- [Building an Admin UI](#building-an-admin-ui)
 - [Integration with FMS](#integration-with-fms)
 - [Testing](#testing)
 - [Common Patterns](#common-patterns)
@@ -33,8 +32,7 @@ A Laravel package for managing Stripe catalog (Products and Prices) with an opti
 - **Price Management**: Manage recurring (subscription) and one-time prices for products
 - **Plans Support**: Plans are simply Products with recurring Prices - no separate model needed
 - **Stripe Sync**: Automatic or manual synchronization with Stripe's catalog
-- **Facade API**: Complete programmatic access via `Catalog` facade - no UI required
-- **Optional Admin UI**: Complete Livewire-based admin interface (optional, requires publishing)
+- **Facade API**: Complete programmatic access via `Catalog` facade - bring your own UI
 - **Product Features**: Support for product features and feature configurations via FMS integration
 - **Checkout Integration**: Ready-to-use Stripe Checkout session creation for subscriptions and one-time payments
 - **Queue Support**: Background sync jobs for better performance
@@ -45,11 +43,10 @@ A Laravel package for managing Stripe catalog (Products and Prices) with an opti
 
 ## Requirements
 
-- Laravel 11+ or 12+
+- Laravel 11+, 12+, or 13+
 - PHP 8.2+
-- Laravel Cashier ^15.0
-- Stripe PHP SDK ^13.0 or ^16.0
-- Livewire 3+
+- Laravel Cashier ^15.0 or ^16.0
+- Stripe PHP SDK ^13.0, ^16.0, or ^17.0
 
 ## Installation
 
@@ -70,7 +67,6 @@ php artisan vendor:publish --tag=catalog-config
 This creates `config/catalog.php` where you can customize:
 - Auto-sync to Stripe
 - Queue connection for sync jobs
-- Admin route prefix and middleware
 - Broadcasting channel
 
 ### Step 3: Run Migrations
@@ -92,36 +88,6 @@ The package includes these migrations:
   - `create_product_features_table` - Product features table
   - `create_product_feature_configs_table` - Product-feature pivot table
 
-### Step 4: Enable UI (Optional)
-
-The package works without UI by default. To enable the admin UI:
-
-1. **Set UI enabled in config** (or publish config and set `CATALOG_ENABLE_UI=true` in `.env`):
-
-```php
-// config/catalog.php
-'enable_ui' => env('CATALOG_ENABLE_UI', false),
-```
-
-2. **Publish views and assets**:
-
-```bash
-php artisan vendor:publish --tag=catalog-views
-php artisan vendor:publish --tag=catalog-assets
-```
-
-3. **Register admin routes** in `routes/web.php`:
-
-```php
-use LaravelCatalog\Livewire\Admin\Products\Index as ProductsIndex;
-
-Route::prefix('ctrl')->name('admin.')->middleware(config('catalog.admin_middleware'))->group(function () {
-    Route::get('/products', ProductsIndex::class)->name('products.index');
-});
-```
-
-**Note**: The UI uses standard Tailwind CSS classes and does not require the custom CSS file. The UI will automatically be enabled if views are published, even without setting `enable_ui` to true.
-
 ## Configuration
 
 ### Environment Variables
@@ -136,8 +102,6 @@ STRIPE_SECRET=your_stripe_secret
 # Catalog Package Configuration
 CATALOG_AUTO_SYNC_STRIPE=false
 CATALOG_QUEUE_CONNECTION=default
-CATALOG_ADMIN_PREFIX=ctrl
-CATALOG_ENABLE_UI=false  # Set to true to enable admin UI
 ```
 
 ### Configuration File
@@ -146,21 +110,11 @@ After publishing, edit `config/catalog.php`:
 
 ```php
 return [
-    // Enable UI components (Livewire, views, routes)
-    // UI will also be enabled automatically if views are published
-    'enable_ui' => env('CATALOG_ENABLE_UI', false),
-
     // Auto-sync products/prices to Stripe when created/updated
     'auto_sync_stripe' => env('CATALOG_AUTO_SYNC_STRIPE', false),
 
     // Queue connection for sync jobs
     'queue_connection' => env('CATALOG_QUEUE_CONNECTION', 'default'),
-
-    // Admin route prefix
-    'admin_route_prefix' => env('CATALOG_ADMIN_PREFIX', 'ctrl'),
-
-    // Admin route middleware
-    'admin_middleware' => ['web', 'auth'],
 
     // Broadcasting channel for sync events
     'broadcast_channel' => 'admin.products',
@@ -499,9 +453,9 @@ $oneTimePrice = Price::factory()
     ->create();
 ```
 
-## Creating Your Own Admin UI
+## Building an Admin UI
 
-The package is designed to work without any UI dependencies. You can build your own admin interface using only the `Catalog` facade and Eloquent models.
+The package has no UI dependencies. Build your own admin interface using only the `Catalog` facade and Eloquent models.
 
 ### Key Principles
 
@@ -714,31 +668,6 @@ public function edit(Product $product)
 
 See the [FMS Integration](#integration-with-fms) section below for more details.
 
-## Admin Interface (Published UI)
-
-### Accessing the Admin UI
-
-After enabling UI and registering routes, access the admin interface at:
-
-```
-/ctrl/products
-```
-
-The interface includes:
-- **Plans Tab**: Shows products marked for storefront display (products with recurring prices)
-- **Products Tab**: Shows all products (both recurring and one-time)
-- **Features Tab**: Manage product features (requires FMS integration)
-- **Settings Tab**: Catalog configuration and storefront settings
-
-### Features
-
-- Create and edit products
-- Manage prices (recurring and one-time)
-- Sync products to Stripe
-- Bulk sync operations
-- Product feature management (with FMS)
-- Storefront configuration (plan visibility, recommendations)
-
 ## Testing
 
 The package includes comprehensive tests. Run them with:
@@ -769,22 +698,18 @@ laravel-catalog/
 │   ├── Services/
 │   │   ├── StripeCatalogService.php
 │   │   └── StripeCheckoutService.php
-│   ├── Livewire/
-│   │   └── Admin/
-│   │       └── Products/
-│   │           └── Index.php
 │   ├── Jobs/
 │   │   └── SyncProductToStripe.php
 │   ├── Events/
 │   │   └── ProductSyncedToStripe.php
+│   ├── Facades/
+│   │   └── Catalog.php
+│   ├── CatalogManager.php
 │   └── CatalogServiceProvider.php
 ├── database/
 │   ├── migrations/
 │   ├── factories/
 │   └── seeders/
-├── resources/
-│   ├── views/
-│   └── css/
 └── config/
     └── catalog.php
 ```
@@ -834,59 +759,9 @@ laravel-catalog/
    Catalog::syncProductAndPrices($product);
    ```
 
-5. **Optional: Enable Admin UI**:
-   
-   If you want to use the published admin UI:
-   ```bash
-   php artisan vendor:publish --tag=catalog-views
-   php artisan vendor:publish --tag=catalog-assets
-   ```
-   
-   Then register routes in `routes/web.php`:
-   ```php
-   Route::prefix('ctrl')->name('ctrl.')->middleware(['web', 'auth'])->group(function () {
-       Route::get('/products', \LaravelCatalog\Livewire\Admin\Products\Index::class)->name('products.index');
-   });
-   ```
-   
-   Access admin UI at `/ctrl/products`
+5. **Build your own admin UI** (optional):
 
-6. **Or build your own UI**:
-   
-   Use the `Catalog` facade to build a custom admin interface. See [Creating Your Own Admin UI](#creating-your-own-admin-ui) section below.
-
-## Integration with Test App
-
-When integrating into a test application:
-
-1. **Add to composer.json** (for local development):
-   ```json
-   {
-       "repositories": [
-           {
-               "type": "path",
-               "url": "./packages/laravel-catalog",
-               "options": {
-                   "symlink": true
-               }
-           }
-       ],
-       "require": {
-           "particle-academy/laravel-catalog": "@dev"
-       }
-   }
-   ```
-
-2. **Run composer update**:
-   ```bash
-   composer update particle-academy/laravel-catalog
-   ```
-
-3. **Migrations load automatically** - no need to publish them
-
-4. **Factories are available** - use `Product::factory()` and `Price::factory()` directly
-
-5. **Configure middleware** in `config/catalog.php` for your test app's auth setup
+   Use the `Catalog` facade to build a custom admin interface. See [Building an Admin UI](#building-an-admin-ui) above.
 
 ## Integration with FMS
 

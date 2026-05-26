@@ -1,6 +1,6 @@
 {
     "name": "particle-academy/laravel-catalog",
-    "description": "Laravel package for managing Stripe catalog (Products, Prices) with admin UI",
+    "description": "Laravel package for managing Stripe catalog (Products, Prices) via a facade API",
     "type": "library",
     "license": "MIT",
     "require": {
@@ -8,8 +8,7 @@
         "laravel/framework": "^11.0|^12.0|^13.0",
         "laravel/cashier": "^15.0|^16.0",
         "stripe/stripe-php": "^13.0|^16.0|^17.0",
-        "particle-academy/laravel-fms": "^0.2|^0.3|^0.4|^0.5",
-        "livewire/livewire": "^3.0|^4.0"
+        "particle-academy/laravel-fms": "^0.2|^0.3|^0.4|^0.5"
     },
     "autoload": {
         "psr-4": {

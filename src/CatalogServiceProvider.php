@@ -3,8 +3,6 @@
 namespace LaravelCatalog;
 
 use Illuminate\Support\ServiceProvider;
-use Illuminate\Support\Facades\Route;
-use Livewire\Livewire;
 
 class CatalogServiceProvider extends ServiceProvider
 {
@@ -71,46 +69,9 @@ class CatalogServiceProvider extends ServiceProvider
             __DIR__.'/../database/seeders' => database_path('seeders'),
         ], 'catalog-seeders');
 
-        // Publish views
-        $this->publishes([
-            __DIR__.'/../resources/views' => resource_path('views/vendor/catalog'),
-        ], 'catalog-views');
-
         // Publish config
         $this->publishes([
             __DIR__.'/../config/catalog.php' => config_path('catalog.php'),
         ], 'catalog-config');
-
-        // Publish CSS
-        $this->publishes([
-            __DIR__.'/../resources/css/admin.css' => public_path('vendor/catalog/admin.css'),
-        ], 'catalog-assets');
-
-        // Views are namespaced (`catalog::`) and inert until referenced, so
-        // they're always registered. The Livewire component alias is the
-        // actual UI surface and stays gated on `catalog.enable_ui`.
-        $this->loadViewsFrom(__DIR__.'/../resources/views', 'catalog');
-
-        if ($this->shouldLoadUi()) {
-            // Register Livewire component alias so AJAX requests can resolve it
-            Livewire::component('laravel-catalog.livewire.admin.products', \LaravelCatalog\Livewire\Admin\Products\Index::class);
-        }
-    }
-
-    /**
-     * Determine if UI components should be loaded.
-     *
-     * UI is enabled only if `catalog.enable_ui` is explicitly true. Previously
-     * the presence of published views also enabled the UI, which meant a
-     * consumer who ran `php artisan vendor:publish` to inspect or fork the
-     * views would inadvertently mount the admin Livewire component on
-     * /ctrl/products. Publishing is no longer sufficient — set
-     * `CATALOG_ENABLE_UI=true` (or `catalog.enable_ui = true` in config)
-     * to opt in.
-     */
-    protected function shouldLoadUi(): bool
-    {
-        return (bool) config('catalog.enable_ui', false);
     }
 }
-

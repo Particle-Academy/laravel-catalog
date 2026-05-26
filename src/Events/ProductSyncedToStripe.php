@@ -11,8 +11,8 @@ use Illuminate\Queue\SerializesModels;
 
 /**
  * ProductSyncedToStripe
- * Created to broadcast when a product and its prices have finished syncing to Stripe.
- * Allows Livewire components to refresh UI (sync status) in real time.
+ * Broadcast when a product and its prices have finished syncing to Stripe so
+ * consumers can refresh UI (sync status) in real time.
  */
 class ProductSyncedToStripe implements ShouldBroadcastNow
 {

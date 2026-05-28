@@ -22,9 +22,14 @@ class Product extends Model
     use HasFactory, HasUlids, SoftDeletes, HasFeatureGroups;
 
     /**
-     * The table associated with the model.
+     * Resolve the table name from config so consumers with prefixed or
+     * renamed schemas (e.g. `catalog_products`) don't have to fork. `??`
+     * (not the config default arg) so an explicit null still falls back.
      */
-    protected $table = 'products';
+    public function getTable(): string
+    {
+        return config('catalog.tables.products') ?? 'products';
+    }
 
     /**
      * Create a new factory instance for the model.
@@ -41,7 +46,7 @@ class Product extends Model
      */
     public function productFeatures(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
     {
-        return $this->belongsToMany(ProductFeature::class, 'product_feature_configs')
+        return $this->belongsToMany(ProductFeature::class, config('catalog.tables.product_feature_configs') ?? 'product_feature_configs')
             ->withPivot([
                 'enabled',
                 'included_quantity',

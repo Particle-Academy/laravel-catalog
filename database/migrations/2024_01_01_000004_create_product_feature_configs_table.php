@@ -11,15 +11,26 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('product_feature_configs', function (Blueprint $table) {
+        $configsTable = config('catalog.tables.product_feature_configs') ?? 'product_feature_configs';
+        $productsTable = config('catalog.tables.products') ?? 'products';
+        $productFeaturesTable = config('catalog.tables.product_features') ?? 'product_features';
+
+        if (Schema::hasTable($configsTable)) {
+            return; // already present (or a renamed/forked install)
+        }
+        if (! Schema::hasTable($productsTable) || ! Schema::hasTable($productFeaturesTable)) {
+            return; // FK target(s) absent — defer to the consumer's own migration
+        }
+
+        Schema::create($configsTable, function (Blueprint $table) use ($productsTable, $productFeaturesTable) {
             $table->ulid('id')->primary();
 
             $table->foreignUlid('product_id')
-                ->constrained('products')
+                ->constrained($productsTable)
                 ->cascadeOnDelete();
 
             $table->foreignUlid('product_feature_id')
-                ->constrained('product_features')
+                ->constrained($productFeaturesTable)
                 ->cascadeOnDelete();
 
             // Boolean toggle for simple on/off features
@@ -45,7 +56,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('product_feature_configs');
+        Schema::dropIfExists(config('catalog.tables.product_feature_configs') ?? 'product_feature_configs');
     }
 };
 

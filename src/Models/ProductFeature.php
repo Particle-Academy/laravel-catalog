@@ -18,9 +18,13 @@ class ProductFeature extends Model
     use HasFactory, HasUlids;
 
     /**
-     * The table associated with the model.
+     * Resolve the table name from config (default `product_features`).
+     * `??` so an explicit null still falls back.
      */
-    protected $table = 'product_features';
+    public function getTable(): string
+    {
+        return config('catalog.tables.product_features') ?? 'product_features';
+    }
 
     /**
      * Create a new factory instance for the model.
@@ -53,7 +57,7 @@ class ProductFeature extends Model
      */
     public function products(): BelongsToMany
     {
-        return $this->belongsToMany(Product::class, 'product_feature_configs')
+        return $this->belongsToMany(Product::class, config('catalog.tables.product_feature_configs') ?? 'product_feature_configs')
             ->withPivot([
                 'enabled',
                 'included_quantity',

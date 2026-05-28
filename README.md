@@ -68,6 +68,7 @@ This creates `config/catalog.php` where you can customize:
 - Auto-sync to Stripe
 - Queue connection for sync jobs
 - Broadcasting channel
+- **Table names** (see [Custom table names](#custom-table-names) below)
 
 ### Step 3: Run Migrations
 
@@ -87,6 +88,33 @@ The package includes these migrations:
   - `create_prices_table` - Prices table for recurring and one-time pricing
   - `create_product_features_table` - Product features table
   - `create_product_feature_configs_table` - Product-feature pivot table
+
+## Custom table names
+
+Catalog's four table names are config-driven, so you don't have to fork
+the package when your schema differs — e.g. your app already has its own
+`products` table and you need catalog's prefixed as `catalog_products`.
+Override any of them in `config/catalog.php`:
+
+```php
+'tables' => [
+    'products'                => 'catalog_products',
+    'prices'                  => 'catalog_prices',
+    'product_features'        => 'catalog_product_features',
+    'product_feature_configs' => 'catalog_product_feature_configs',
+],
+```
+
+Both the models (`Product` / `Price` / `ProductFeature`, including the
+`product_feature_configs` pivot relationship) and the create migrations
+read these values, so models, relationships, Stripe sync, and schema all
+stay in sync from a single change.
+
+The create migrations also **self-skip** (no error) when the target
+table already exists, or when a foreign-key target table is absent at
+apply time — so they can sit early in your chronological migration order
+and you can build the real tables later in your own migration if you
+prefer. (Same shape as `laravel-fms` v0.7.0's `fms.tables` block.)
 
 ## Configuration
 

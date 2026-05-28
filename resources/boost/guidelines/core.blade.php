@@ -44,9 +44,23 @@ return [
     'auto_sync_stripe' => env('CATALOG_AUTO_SYNC_STRIPE', false),
     'queue_connection' => env('CATALOG_QUEUE_CONNECTION', 'default'),
     'broadcast_channel' => 'admin.products',
+
+    // Override table names when your schema differs (e.g. prefixed).
+    // Models AND migrations read these; create migrations self-skip when
+    // the table exists or an FK target is absent.
+    'tables' => [
+        'products' => 'products',
+        'prices' => 'prices',
+        'product_features' => 'product_features',
+        'product_feature_configs' => 'product_feature_configs',
+    ],
 ];
 </code-snippet>
 @endverbatim
+
+When your app already has a `products` table, prefix catalog's
+(`catalog_products`, etc.) via the `tables` block — no fork needed. This
+mirrors `laravel-fms` v0.7.0's `fms.tables`.
 
 ### Using the Catalog Facade
 

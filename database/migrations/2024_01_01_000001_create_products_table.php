@@ -11,7 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('products', function (Blueprint $table) {
+        $productsTable = config('catalog.tables.products') ?? 'products';
+
+        if (Schema::hasTable($productsTable)) {
+            return; // already present (or a renamed/forked install) — leave it alone
+        }
+
+        Schema::create($productsTable, function (Blueprint $table) {
             $table->ulid('id')->primary();
 
             // Stripe Product attributes
@@ -41,6 +47,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('products');
+        Schema::dropIfExists(config('catalog.tables.products') ?? 'products');
     }
 };

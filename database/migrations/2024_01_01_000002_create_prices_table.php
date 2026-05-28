@@ -11,12 +11,22 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('prices', function (Blueprint $table) {
+        $pricesTable = config('catalog.tables.prices') ?? 'prices';
+        $productsTable = config('catalog.tables.products') ?? 'products';
+
+        if (Schema::hasTable($pricesTable)) {
+            return; // already present (or a renamed/forked install)
+        }
+        if (! Schema::hasTable($productsTable)) {
+            return; // FK target absent — defer to the consumer's own migration
+        }
+
+        Schema::create($pricesTable, function (Blueprint $table) use ($productsTable) {
             $table->ulid('id')->primary();
 
             // Foreign key to products
             $table->foreignUlid('product_id')
-                ->constrained('products')
+                ->constrained($productsTable)
                 ->cascadeOnDelete();
 
             // Stripe Price attributes
@@ -54,6 +64,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('prices');
+        Schema::dropIfExists(config('catalog.tables.prices') ?? 'prices');
     }
 };

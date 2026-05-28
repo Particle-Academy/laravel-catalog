@@ -30,9 +30,13 @@ class Price extends Model
     }
 
     /**
-     * The table associated with the model.
+     * Resolve the table name from config (default `prices`). `??` so an
+     * explicit null still falls back to the historical default.
      */
-    protected $table = 'prices';
+    public function getTable(): string
+    {
+        return config('catalog.tables.prices') ?? 'prices';
+    }
 
     public const TYPE_RECURRING = 'recurring';
 

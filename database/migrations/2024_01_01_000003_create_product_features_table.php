@@ -11,7 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('product_features', function (Blueprint $table) {
+        $productFeaturesTable = config('catalog.tables.product_features') ?? 'product_features';
+
+        if (Schema::hasTable($productFeaturesTable)) {
+            return; // already present (or a renamed/forked install)
+        }
+
+        Schema::create($productFeaturesTable, function (Blueprint $table) {
             $table->ulid('id')->primary();
 
             // Feature key used in code (e.g. use-mcp, ai-tokens, seats)
@@ -38,7 +44,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('product_features');
+        Schema::dropIfExists(config('catalog.tables.product_features') ?? 'product_features');
     }
 };
 

@@ -72,22 +72,29 @@ This creates `config/catalog.php` where you can customize:
 
 ### Step 3: Run Migrations
 
-The package automatically loads both its own migrations and Laravel Cashier migrations (since Catalog depends on Cashier).
+The package auto-loads its own four migrations:
 
 ```bash
 php artisan migrate
 ```
 
-The package includes these migrations:
-- **Cashier migrations** (auto-loaded):
-  - `create_customer_columns` - Stripe customer columns on users table
-  - `create_subscriptions_table` - Subscriptions table
-  - `create_subscription_items_table` - Subscription items table
 - **Catalog migrations** (auto-loaded):
   - `create_products_table` - Products table with Stripe sync fields
   - `create_prices_table` - Prices table for recurring and one-time pricing
   - `create_product_features_table` - Product features table
   - `create_product_feature_configs_table` - Product-feature pivot table
+
+**Cashier migrations are NOT auto-loaded.** Catalog depends on Cashier,
+but auto-registering Cashier's `create_subscriptions_table` would be fatal
+for a host app that already owns a `subscriptions` table. You decide who
+owns those tables:
+
+- **Greenfield Cashier app** — let Catalog load them:
+  `CATALOG_LOAD_CASHIER_MIGRATIONS=true` (or set
+  `catalog.load_cashier_migrations` in `config/catalog.php`).
+- **App with existing subscription infra** — leave it off (the default)
+  and manage Cashier yourself if needed:
+  `php artisan vendor:publish --tag=cashier-migrations`.
 
 ## Custom table names
 

@@ -37,13 +37,20 @@ class CatalogServiceProvider extends ServiceProvider
         // Configure FMS to use Catalog's ProductFeature model
         config(['fms.product_feature_model' => \LaravelCatalog\Models\ProductFeature::class]);
 
-        // Load Cashier migrations (Catalog depends on Cashier)
-        // Why: Since Catalog requires Cashier, we auto-load Cashier's migrations
-        // so users don't need to manually publish them
-        $cashierReflection = new \ReflectionClass(\Laravel\Cashier\CashierServiceProvider::class);
-        $cashierMigrationsPath = dirname($cashierReflection->getFileName(), 2).'/database/migrations';
-        if (file_exists($cashierMigrationsPath)) {
-            $this->loadMigrationsFrom($cashierMigrationsPath);
+        // Cashier migrations are OPT-IN (default off). Auto-loading them
+        // registers Cashier's `create_subscriptions_table` etc., which is
+        // fatal for any host app that already owns a `subscriptions` table
+        // (its own billing infra, not Cashier's). The host app is the right
+        // place to decide whether Cashier owns those tables — enable
+        // `catalog.load_cashier_migrations` for a greenfield Cashier app, or
+        // `php artisan vendor:publish --tag=cashier-migrations` to manage
+        // them yourself.
+        if (config('catalog.load_cashier_migrations', false)) {
+            $cashierReflection = new \ReflectionClass(\Laravel\Cashier\CashierServiceProvider::class);
+            $cashierMigrationsPath = dirname($cashierReflection->getFileName(), 2).'/database/migrations';
+            if (file_exists($cashierMigrationsPath)) {
+                $this->loadMigrationsFrom($cashierMigrationsPath);
+            }
         }
 
         // Load migrations from package

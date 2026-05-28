@@ -15,6 +15,24 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Load Cashier Migrations
+    |--------------------------------------------------------------------------
+    |
+    | Catalog requires Laravel Cashier, but it does NOT auto-load Cashier's
+    | migrations by default — doing so registers Cashier's
+    | `create_subscriptions_table` (and friends), which is fatal for a host
+    | app that already owns a `subscriptions` table.
+    |
+    | Greenfield apps that want Catalog to manage Cashier's schema can flip
+    | this on. Otherwise publish + manage them yourself:
+    | `php artisan vendor:publish --tag=cashier-migrations`.
+    |
+    */
+
+    'load_cashier_migrations' => env('CATALOG_LOAD_CASHIER_MIGRATIONS', false),
+
+    /*
+    |--------------------------------------------------------------------------
     | Queue Connection
     |--------------------------------------------------------------------------
     |

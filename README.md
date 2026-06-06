@@ -1,4 +1,6 @@
 [![Powered by Tynn](https://img.shields.io/endpoint?url=https%3A%2F%2Ftynn.ai%2Fo%2Fparticle-academy%2Flaravel-catalog%2Fbadge.json)](https://tynn.ai/o/particle-academy/laravel-catalog)
+
+[![Fancy UI suite](art/fancy-ui.svg)](https://particle.academy)
 # Laravel Catalog Package
 
 A Laravel package for managing Stripe catalog (Products and Prices) via a facade API. Built for apps that bring their own UI.

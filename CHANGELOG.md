@@ -13,6 +13,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.3] — 2026-07-27
+
+### Changed
+
+- **Allow `particle-academy/laravel-fms` `^0.8`.** 0.8.0 corrects the `usage` /
+  `remaining` callback signature to `($user, $context)`. This package defines no
+  such callbacks, so the change does not reach it — but the old ceiling would
+  have made 0.8.0 unreachable for anyone installing both.
+
 ## [0.9.2] — 2026-07-27
 
 ### Fixed

@@ -137,6 +137,22 @@ class StripeCatalogService
                 ]),
             ];
 
+            // Stripe Prices support lookup_key NATIVELY, and the metadata copy
+            // above is not a substitute: `prices.list(lookup_keys: [...])` only
+            // reads the real field, which is the entire reason a lookup key
+            // exists. Sent only when set — passing null would clear a key that
+            // is already on the Stripe price.
+            //
+            // `transfer_lookup_key` is what makes this survive this service's
+            // own lifecycle. Prices are immutable, so a changed amount archives
+            // the old price and creates a new one below; without the transfer,
+            // that create fails with "lookup key already exists" the first time
+            // anyone changes the price of something that has a key.
+            if ($price->lookup_key) {
+                $stripePriceData['lookup_key'] = $price->lookup_key;
+                $stripePriceData['transfer_lookup_key'] = true;
+            }
+
             if ($price->billing_scheme) {
                 $stripePriceData['billing_scheme'] = $price->billing_scheme;
             }
@@ -206,10 +222,22 @@ class StripeCatalogService
                         $price->save();
                     } else {
                         // Just update metadata/active status
-                        $this->stripe->prices->update($price->external_id, [
+                        $updates = [
                             'active' => $price->active,
                             'metadata' => $stripePriceData['metadata'],
-                        ]);
+                        ];
+
+                        // Changing ONLY the lookup key leaves pricing untouched,
+                        // so it lands here rather than in the archive-and-replace
+                        // branch. Omitting it would make that edit a silent
+                        // no-op: saved locally, never sent, and a lookup by the
+                        // new key finds nothing.
+                        if ($price->lookup_key) {
+                            $updates['lookup_key'] = $price->lookup_key;
+                            $updates['transfer_lookup_key'] = true;
+                        }
+
+                        $this->stripe->prices->update($price->external_id, $updates);
                     }
                 } catch (ApiErrorException $e) {
                     // Price doesn't exist in Stripe, create it

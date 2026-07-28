@@ -23,6 +23,7 @@ A Laravel package for managing Stripe catalog (Products and Prices) via a facade
   - [Working with Plans](#working-with-plans)
   - [Syncing to Stripe](#syncing-to-stripe)
   - [Creating Checkout Sessions](#creating-checkout-sessions)
+  - [Fulfilling Payments](#fulfilling-payments)
 - [Building an Admin UI](#building-an-admin-ui)
 - [Integration with FMS](#integration-with-fms)
 - [Testing](#testing)
@@ -459,6 +460,119 @@ $checkout = Catalog::oneTimeCheckout(
 
 return redirect($checkout->asStripeCheckoutSession()->url);
 ```
+
+### Fulfilling Payments
+
+> **`successUrl` is not proof of payment.** A customer who pays and closes the
+> tab never reaches it, and reaching it does not mean the payment cleared.
+> Granting access on the redirect alone gives some customers nothing they paid
+> for, and gives others access they did not pay for. Neither failure raises an
+> error.
+
+Fulfilment belongs on the webhook. You do not need to build one: this package
+depends on **Laravel Cashier**, which already registers a signed endpoint.
+
+```
+POST /stripe/webhook        (route name: cashier.webhook)
+```
+
+Cashier handles subscription lifecycle events itself, and dispatches
+`WebhookReceived` for **every** payload type before doing so. One-time payments
+are therefore a listener, not a controller, route and signature check of your
+own.
+
+#### 1. Put your own identifier in the checkout metadata
+
+This is what lets you reconcile a payment without depending on the browser
+coming back. Do it when you create the session:
+
+```php
+$order = Order::create([...]);   // your own record, still unpaid
+
+$checkout = Catalog::oneTimeCheckout(
+    owner: $user,
+    price: $oneTimePrice,
+    quantity: 1,
+    successUrl: route('payments.success'),
+    cancelUrl: route('payments.cancel'),
+    metadata: ['order_id' => (string) $order->id],
+);
+```
+
+#### 2. Listen for the completed session
+
+```php
+namespace App\Listeners;
+
+use Laravel\Cashier\Events\WebhookReceived;
+
+class FulfilOrder
+{
+    public function handle(WebhookReceived $event): void
+    {
+        if (($event->payload['type'] ?? null) !== 'checkout.session.completed') {
+            return;
+        }
+
+        $session = $event->payload['data']['object'] ?? [];
+
+        // Check payment_status, NOT $session['status'] === 'complete'.
+        // A session can be complete and still unpaid — delayed payment
+        // methods clear later, and some never clear at all.
+        if (($session['payment_status'] ?? null) !== 'paid') {
+            return;
+        }
+
+        $orderId = $session['metadata']['order_id'] ?? null;
+
+        if ($orderId === null) {
+            return;   // Another product sold through the same Stripe account.
+        }
+
+        $order = Order::find($orderId);
+
+        if ($order === null || $order->isPaid()) {
+            return;   // Unknown, or already handled — see idempotency below.
+        }
+
+        $order->markPaid($session['id'] ?? null);
+    }
+}
+```
+
+Laravel discovers listeners in `app/Listeners` automatically. Confirm it is
+wired with `php artisan event:list | grep WebhookReceived`.
+
+#### 3. Configure Stripe
+
+```dotenv
+STRIPE_KEY=pk_test_...
+STRIPE_SECRET=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+```
+
+**Set `STRIPE_WEBHOOK_SECRET`.** Without it Cashier does not verify signatures,
+and the endpoint will accept anything posted to it. Then point a Stripe webhook
+at `/stripe/webhook` and subscribe to `checkout.session.completed`.
+
+Test locally with the Stripe CLI:
+
+```bash
+stripe listen --forward-to localhost:8000/stripe/webhook
+stripe trigger checkout.session.completed
+```
+
+#### Fulfilment must be idempotent
+
+Stripe **retries** deliveries, so the same event arrives more than once. If you
+also fulfil on the `successUrl` redirect — reasonable, since it makes the happy
+path instant — then the two race each other, and in practice they collide
+often. Guard on your own record's state (the `$order->isPaid()` check above)
+rather than assuming one delivery.
+
+Do not let a fulfilment failure bubble out of the listener either: a non-2xx
+response tells Stripe to redeliver, so a permanently failing order is retried
+indefinitely. Log it and return.
 
 ### Using Factories in Tests
 

@@ -13,6 +13,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Documentation
+
+- **Added "Fulfilling Payments".** The checkout docs ended at the redirect to
+  Stripe, and nothing in the README or this changelog mentioned webhooks — so
+  the obvious reading was that `successUrl` means paid. It does not: a customer
+  who pays and closes the tab never reaches it, and reaching it does not mean
+  the payment cleared. Following the docs literally shipped either unfulfilled
+  paid orders or free product, and neither raises an error.
+
+  The new section documents what was already true but undiscoverable: this
+  package depends on Cashier, which already serves a signed `POST /stripe/webhook`
+  and dispatches `WebhookReceived` for every payload type — so one-time
+  fulfilment is a listener, not a route and signature check of your own. It also
+  covers the three things that are easy to get wrong: checking `payment_status`
+  rather than a `complete` session status, putting your own id in the checkout
+  `metadata` (the `metadata:` parameter existed but no example used it), and
+  making fulfilment idempotent against Stripe's retries and the redirect race.
+
+  Reported from an integration that hit all three.
+
 ## [0.9.4] — 2026-07-28
 
 ### Changed

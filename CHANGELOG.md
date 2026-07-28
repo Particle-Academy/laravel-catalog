@@ -13,6 +13,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.4] — 2026-07-28
+
+### Changed
+
+- Widened the `particle-academy/laravel-fms` requirement from `^0.2|…|^0.8` to `>=0.2 <2.0`, so a sibling
+  minor release is an upgrade and not a resolver conflict. **No action needed** —
+  widening a range only adds candidates; the version you have today still resolves.
+
+  A caret on a `0.x` range locks the MINOR, so every one of these pinned a
+  sibling at whatever it happened to be on the day it was written, and each
+  sibling release then read as a conflict to Composer/npm rather than an
+  upgrade. Nothing in this package was using an API the newer minors removed
+  — the range was the whole problem.
+
 ## [0.9.3] — 2026-07-27
 
 ### Changed
@@ -38,7 +52,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
      synced product wrote `product_lookup_key => null` into its Stripe metadata.
      Nothing errored; the metadata was quietly useless.
 
-  Reported by [GuardCard.net](https://github.com/Particle-Academy/laravel-catalog/issues/4),
+  Reported by
+  [GuardCard.net](https://github.com/Particle-Academy/laravel-catalog/issues/4),
   who hit it integrating catalog + fms.
 
   **What you have to do: nothing.** Run `php artisan migrate`. The column is

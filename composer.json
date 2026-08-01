@@ -10,9 +10,19 @@
         "stripe/stripe-php": "^13.0|^16.0|^17.0",
         "particle-academy/laravel-fms": ">=0.2 <2.0"
     },
+    "require-dev": {
+        "orchestra/testbench": "^9.0|^10.0|^11.0",
+        "pestphp/pest": "^3.0|^4.0",
+        "pestphp/pest-plugin-laravel": "^3.0|^4.0"
+    },
     "autoload": {
         "psr-4": {
             "LaravelCatalog\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "LaravelCatalog\\Tests\\": "tests/"
         }
     },
     "extra": {
@@ -23,5 +33,10 @@
         }
     },
     "minimum-stability": "stable",
-    "prefer-stable": true
+    "prefer-stable": true,
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    }
 }

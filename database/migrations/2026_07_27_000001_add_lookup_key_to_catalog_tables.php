@@ -34,27 +34,54 @@ use Illuminate\Support\Facades\Schema;
  *
  * Nullable, and NULLs do not collide in a unique index on any supported driver,
  * so existing rows are unaffected — nothing to backfill before upgrading.
+ *
+ * ## Table names come from config
+ *
+ * Like every other migration in this package, the target tables are read from
+ * `config('catalog.tables.*')`. Naming them literally is not a shortcut, it is
+ * a bug in two directions at once for anyone who prefixes their catalog tables:
+ * the ALTER misses the real `catalog_products`, and if the app happens to own
+ * an unrelated `products` table of its own — the exact reason to prefix — the
+ * column lands on THAT one before the run dies on the missing `prices`.
+ * Reported in #7.
+ *
+ * The two guards mirror the self-skip the create migrations already use: the
+ * target table can legitimately be absent here, because those migrations defer
+ * to the consumer's own when a foreign-key target is missing at apply time, and
+ * `Schema::table()` on a table that does not exist is a hard failure rather
+ * than the no-op that situation calls for. The column guard makes a re-run (or
+ * an install that already added it by hand) idempotent.
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('products', function (Blueprint $table) {
-            $table->string('lookup_key')->nullable()->unique()->after('external_id');
-        });
+        foreach ($this->tables() as $tableName) {
+            if (! Schema::hasTable($tableName) || Schema::hasColumn($tableName, 'lookup_key')) {
+                continue;
+            }
 
-        Schema::table('prices', function (Blueprint $table) {
-            $table->string('lookup_key')->nullable()->unique()->after('external_id');
-        });
+            Schema::table($tableName, function (Blueprint $table) {
+                $table->string('lookup_key')->nullable()->unique()->after('external_id');
+            });
+        }
     }
 
     public function down(): void
     {
-        // The index goes in its own statement, before the column. SQLite
-        // rebuilds the table to drop a column and fails if an index still
-        // references it, so doing both in one closure breaks a rollback on the
-        // driver most test suites run on.
-        foreach (['products', 'prices'] as $tableName) {
+        foreach ($this->tables() as $tableName) {
+            if (! Schema::hasTable($tableName) || ! Schema::hasColumn($tableName, 'lookup_key')) {
+                continue;
+            }
+
+            // The index goes in its own statement, before the column. SQLite
+            // rebuilds the table to drop a column and fails if an index still
+            // references it, so doing both in one closure breaks a rollback on
+            // the driver most test suites run on.
+            //
+            // The index name is derived from the resolved table name because
+            // that is what Laravel generated it from — on a prefixed install it
+            // is `catalog_products_lookup_key_unique`, not `products_…`.
             Schema::table($tableName, function (Blueprint $table) use ($tableName) {
                 $table->dropUnique("{$tableName}_lookup_key_unique");
             });
@@ -63,5 +90,18 @@ return new class extends Migration
                 $table->dropColumn('lookup_key');
             });
         }
+    }
+
+    /**
+     * The catalog tables that carry a `lookup_key`, as configured.
+     *
+     * @return list<string>
+     */
+    private function tables(): array
+    {
+        return [
+            config('catalog.tables.products') ?? 'products',
+            config('catalog.tables.prices') ?? 'prices',
+        ];
     }
 };

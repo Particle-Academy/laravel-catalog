@@ -86,6 +86,7 @@ php artisan migrate
   - `create_prices_table` - Prices table for recurring and one-time pricing
   - `create_product_features_table` - Product features table
   - `create_product_feature_configs_table` - Product-feature pivot table
+  - `add_lookup_key_to_catalog_tables` - `lookup_key` on products + prices
 
 **Cashier migrations are NOT auto-loaded.** Catalog depends on Cashier,
 but auto-registering Cashier's `create_subscriptions_table` would be fatal
@@ -116,15 +117,19 @@ Override any of them in `config/catalog.php`:
 ```
 
 Both the models (`Product` / `Price` / `ProductFeature`, including the
-`product_feature_configs` pivot relationship) and the create migrations
-read these values, so models, relationships, Stripe sync, and schema all
-stay in sync from a single change.
+`product_feature_configs` pivot relationship) and **every** migration the
+package ships read these values, so models, relationships, Stripe sync,
+and schema all stay in sync from a single change.
 
-The create migrations also **self-skip** (no error) when the target
-table already exists, or when a foreign-key target table is absent at
-apply time — so they can sit early in your chronological migration order
-and you can build the real tables later in your own migration if you
-prefer. (Same shape as `laravel-fms` v0.7.0's `fms.tables` block.)
+The migrations also **self-skip** (no error) when there is nothing to do
+— the target table already exists, a foreign-key target table is absent
+at apply time, or an added column is already there. So they can sit early
+in your chronological migration order and you can build the real tables
+later in your own migration if you prefer. (Same shape as `laravel-fms`
+v0.7.0's `fms.tables` block.)
+
+A prefixed install is covered by the test suite: the migration tests run
+against `catalog_*` names, not the defaults.
 
 ## Configuration
 

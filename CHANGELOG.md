@@ -13,6 +13,59 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.5] — 2026-07-31
+
+### Fixed
+
+- **The `add_lookup_key_to_catalog_tables` migration now reads
+  `config('catalog.tables.*')` instead of naming `products` / `prices`
+  literally.** Shipped that way in 0.9.4, it broke `migrate:fresh` outright for
+  every install that renames or prefixes the catalog tables — the documented,
+  supported configuration that every other migration in this package already
+  honoured.
+
+  **What you must do:**
+
+  - **Default table names (`products` / `prices`) — nothing.** The migration
+    resolves to exactly the same names it used before.
+  - **Prefixed or renamed tables — upgrade and run `php artisan migrate`.** The
+    0.9.4 run failed before recording itself, so the migration is still pending
+    and applies cleanly against your real tables. If you held back at 0.9.1
+    because of this, 0.9.4's laravel-fms range widening (and with it
+    laravel-fms 0.8.0) is now reachable.
+  - **Prefixed tables *and* MySQL — check your own `products` table for a stray
+    `lookup_key`.** MySQL does not roll DDL back, so the first half of the
+    broken migration committed: the column and its unique index landed on
+    whatever unprefixed `products` table you had — very likely your
+    application's own, which is the reason to prefix in the first place. Drop
+    the index and the column if you find them. Postgres and SQLite rolled the
+    whole migration back, so there is nothing to clean up there.
+
+  Reported in [#7](https://github.com/Particle-Academy/laravel-catalog/issues/7).
+
+- **The migration self-skips instead of failing when there is nothing to do.**
+  The create migrations already defer to the consumer when a foreign-key target
+  is missing at apply time, so a catalog table can legitimately be absent when
+  this one runs — and `Schema::table()` on a missing table is a hard error, not
+  the no-op that case calls for. It now skips a missing table and a column that
+  is already present, matching the self-skip the rest of the package documents.
+
+- **Rollback drops the right index on a prefixed install.** `down()` derived the
+  unique index name from the literal table name, so it looked for
+  `products_lookup_key_unique` where Laravel had created
+  `catalog_products_lookup_key_unique`. It now derives it from the resolved name.
+
+### Added
+
+- **A test suite.** The package shipped none, which is why a hardcoded table
+  name reached a release. `composer install && vendor/bin/pest` covers the
+  migrations, and CI now runs it on every push and PR.
+
+  The migration tests run against **non-default** table names on purpose: a
+  migration test that only exercises the defaults passes whether or not the
+  config is ever read, and would have passed against the 0.9.4 bug. Eight of the
+  nine fail against the pre-fix migration, with the reporter's exact error.
+
 ### Documentation
 
 - **Added "Fulfilling Payments".** The checkout docs ended at the redirect to

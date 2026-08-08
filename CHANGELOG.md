@@ -13,6 +13,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.0] — 2026-08-07
+
+### Added
+
+- **`LaravelCatalog\LiveContract`** — the PHP half of the catalog's Live
+  Contract. Declares which broadcast events this package emits and which client
+  query keys each one invalidates, matching `catalogLive` in
+  `@particle-academy/fancy-catalog`.
+
+  A parity test on each side asserts the two lists match. That test is the
+  point: drift between a mirror pair is silent, because a renamed event does not
+  throw — the browser listens for a name nobody broadcasts, the cache is never
+  invalidated, and the UI quietly stops updating.
+
+  **What you must do:** nothing. The constant is additive and nothing reads it
+  unless a host wires it up.
+
+
 ## [0.10.0] — 2026-08-07
 
 ### Changed

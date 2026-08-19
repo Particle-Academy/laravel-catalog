@@ -208,8 +208,14 @@ class StripeCatalogService
                         || ($existingPrice->billing_scheme ?? 'per_unit') !== ($stripePriceData['billing_scheme'] ?? 'per_unit')
                         || ($existingPrice->tiers_mode ?? null) !== ($stripePriceData['tiers_mode'] ?? null)
                         || json_encode($existingPrice->tiers ?? []) !== json_encode($stripePriceData['tiers'] ?? [])
-                        || json_encode($existingPrice->transform_quantity ?? []) !== json_encode($stripePriceData['transform_quantity'] ?? [])
-                        || json_encode($existingPrice->custom_unit_amount ?? []) !== json_encode($stripePriceData['custom_unit_amount'] ?? []);
+                        // Compared order-INSENSITIVELY: these are maps, and the two sides
+                        // come from different places -- Stripe returns its own key order,
+                        // we build ours. A plain json_encode compare called identical
+                        // pricing "changed", archiving a live price and creating a
+                        // replacement, which churns the price id and orphans whatever
+                        // referenced it. `tiers` above stays ordered: it is a list.
+                        || ! self::sameShape($existingPrice->transform_quantity ?? [], $stripePriceData['transform_quantity'] ?? [])
+                        || ! self::sameShape($existingPrice->custom_unit_amount ?? [], $stripePriceData['custom_unit_amount'] ?? []);
 
                     if ($pricingChanged) {
                         // Archive old price
@@ -279,5 +285,46 @@ class StripeCatalogService
 
         return $product->fresh();
     }
+
+    /** Deep equality that ignores map key order. Lists keep theirs. */
+    protected static function sameShape(mixed $a, mixed $b): bool
+    {
+        $a = is_object($a) ? json_decode((string) json_encode($a), true) : $a;
+        $b = is_object($b) ? json_decode((string) json_encode($b), true) : $b;
+
+        if (! is_array($a) || ! is_array($b)) {
+            return $a === $b;
+        }
+
+        if (array_is_list($a) || array_is_list($b)) {
+            if (! array_is_list($a) || ! array_is_list($b) || count($a) !== count($b)) {
+                return false;
+            }
+
+            foreach ($a as $i => $item) {
+                if (! self::sameShape($item, $b[$i])) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        ksort($a);
+        ksort($b);
+
+        if (array_keys($a) !== array_keys($b)) {
+            return false;
+        }
+
+        foreach ($a as $k => $v) {
+            if (! self::sameShape($v, $b[$k])) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
 }
 

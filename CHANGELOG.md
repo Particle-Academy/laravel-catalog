@@ -13,6 +13,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## 0.9.0 - 2026-08-18
+
+### Fixed
+
+- **Key order was treated as a pricing change, archiving live prices for
+  nothing.** `transform_quantity` and `custom_unit_amount` were compared with
+  `json_encode`. Both are maps, and the two sides come from different places -
+  Stripe returns its own key order, this package builds its own - so identical
+  pricing compared unequal. Prices are immutable, so "changed" means archive the
+  old price and create a replacement: a churned price id, anything referencing
+  the old one orphaned, and nothing reporting it.
+
+  Both are now compared without regard to key order. `tiers` deliberately stays
+  order-sensitive, because it is a list and its order is part of the meaning.
+
+  The Node twin had the identical defect and is fixed in its 0.5.0.
+
+### Changed
+
+- `tests/Unit` is now collected by the suite. The directory existed and no
+  testsuite included it, so anything placed there ran nowhere and reported green.
+
+
 ## [0.11.0] — 2026-08-07
 
 ### Added

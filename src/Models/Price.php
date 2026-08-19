@@ -193,11 +193,19 @@ class Price extends Model
     }
 
     /**
-     * Get amount in cents.
+     * Get amount in minor units (the currency's smallest unit).
+     *
+     * **Nullable from 0.13.0.** A `tiered` or `custom_unit_amount` price has no
+     * unit amount at all -- Stripe does not set one, and the tiers carry the
+     * money. It was a non-nullable column, which made those prices
+     * unrepresentable in a package that otherwise models them fully.
+     *
+     * "Cents" is a misnomer kept for compatibility: JPY has no cent and KWD has
+     * three decimal places. This is whole minor units, never a float.
      */
-    public function amountCents(): int
+    public function amountCents(): ?int
     {
-        return $this->unit_amount;
+        return $this->unit_amount === null ? null : (int) $this->unit_amount;
     }
 
     /**

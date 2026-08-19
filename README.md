@@ -195,6 +195,38 @@ Price::create([
 Catalog::syncProductAndPrices($product); // Success!
 ```
 
+### Tiered and custom-amount prices (v0.13.0+)
+
+`unit_amount` is **nullable**, because Stripe sets none on a `tiered` or
+`custom_unit_amount` price — the tiers carry the money. It is omitted from the
+Stripe payload entirely when null.
+
+```php
+Price::create([
+    'product_id' => $product->id,
+    'unit_amount' => null,          // the tiers below carry it
+    'currency' => 'USD',
+    'type' => Price::TYPE_RECURRING,
+    'recurring_interval' => 'month',
+    'billing_scheme' => 'tiered',
+    'tiers_mode' => 'graduated',
+    'tiers' => [
+        ['up_to' => 1000, 'unit_amount' => 0],   // first 1,000 included
+        ['up_to' => 'inf', 'unit_amount' => 1],  // then 1 cent each, unbounded
+    ],
+]);
+```
+
+That last shape is the answer to "first N included, then priced per unit,
+forever": it is a **pricing** question and belongs on the Price. The entitlement
+side (`laravel-fms`'s `overage_limit`) is a *ceiling* and deliberately has no
+unbounded mode.
+
+`Price::amountCents()` returns `?int` from 0.13.0 — a tiered price has no
+amount. Amounts are always whole minor units, never a float: "cents" in these
+names is a misnomer kept for compatibility, since JPY has no cent and KWD has
+three decimal places.
+
 ## Usage
 
 ### Using the Catalog Facade

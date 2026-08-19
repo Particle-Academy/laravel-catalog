@@ -13,6 +13,68 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## 0.13.0 - 2026-08-19
+
+**Two migrations, and they run against live billing data.** Back up your
+`prices` and `products` tables (and `feature_usages`, if you also run
+`laravel-fms` 0.11.0) before `php artisan migrate`. Both migrations are strict
+widenings, so nothing existing can be lost on the way up; the rollbacks refuse
+rather than truncate.
+
+Rationale and the operator procedure: `.ai/plans/fancy-commerce-gating-rulings.md`.
+
+### Fixed
+
+- **A tiered price could not be stored at all**, in a package that models
+  `tiers`, `tiers_mode` and `custom_unit_amount`, sends them to Stripe and
+  compares them on the way back. Two separate reasons, both fixed here:
+
+  1. **`prices.unit_amount` was `unsignedInteger` NOT NULL.** Stripe sets *no*
+     unit amount on a `tiered` or `custom_unit_amount` price — the tiers carry
+     the money — so one had to be invented, and then sent to Stripe alongside
+     `tiers`, which is an API error at best and a per-unit charge instead of a
+     tiered one if it is not.
+
+     It is now **nullable `unsignedBigInteger`**. `unit_amount` is omitted from
+     the Stripe payload entirely when null, on both the create and the compare
+     path. Bigint because the old ceiling was 4,294,967,295 minor units — about
+     **$42.9M**, and far less in a zero-decimal currency (JPY 4.29bn is roughly
+     $28M). It stays UNSIGNED: Stripe rejects a negative unit amount, and a
+     credit is a coupon or a credit note.
+
+  2. **Eight columns the models declare were never created by any migration** —
+     `billing_scheme`, `tiers`, `tiers_mode`, `transform_quantity`,
+     `custom_unit_amount`, `pricing_model`, `nickname` and `last_synced_at` on
+     `prices`, plus `last_synced_at` on `products`. All are in `$fillable`, six
+     are cast, and `StripeCatalogService::syncPrice()` branches on three. With
+     no column behind them, writing threw and reading returned null forever — so
+     `$price->billing_scheme` was always null, the `'tiered'` branch could never
+     fire, and **the entire advanced-pricing feature set was dead code.**
+
+     This is the same defect as `lookup_key` (#4, fixed in 0.11.0), seven more
+     times, and it is why fixing `unit_amount` alone would not have been enough.
+
+  **What to do:** back up, then `php artisan migrate`. Nothing is backfilled and
+  no existing behaviour changes — an existing per-unit price reads
+  `billing_scheme = null`, which is the same null its model attribute returned
+  before. **If you type `unit_amount` anywhere**, note that
+  `Price::amountCents()` now returns `?int`; a tiered price has no amount.
+
+  **Rolling back:** `migrate:rollback` restores `NOT NULL` only when no price is
+  null and none exceeds the old ceiling. Otherwise it throws and names the rows,
+  because writing 0 over a tiered price's null would turn it into a free one.
+
+- **`pricingChanged` compared unit amounts with `!==`.** Prices are immutable,
+  so "changed" means archive the live price and create a replacement — a churned
+  price id and orphaned references, silently. The two sides come from different
+  places: Stripe's SDK returns an int, this side may hold a numeric string
+  depending on driver and cast, and `"1999" !== 1999`. Amounts are now compared
+  through `sameAmount()`, which normalises to an integer and keeps `null`
+  distinct from `0` — one means "the tiers carry the money", the other means
+  free.
+
+  Same class of fix as the key-order comparison in 0.12.0, on a scalar.
+
 ## 0.12.0 - 2026-08-18
 
 ### Fixed

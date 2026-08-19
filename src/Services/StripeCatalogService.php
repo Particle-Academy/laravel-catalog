@@ -127,7 +127,6 @@ class StripeCatalogService
             $stripePriceData = [
                 'product' => $price->product->external_id,
                 'currency' => strtolower($price->currency),
-                'unit_amount' => $price->unit_amount,
                 'active' => $price->active,
                 'metadata' => array_merge($price->metadata() ?? [], [
                     // Shared internal ID allowing us to link archived and replacement Stripe Prices.
@@ -136,6 +135,14 @@ class StripeCatalogService
                     'lookup_key' => $price->lookup_key,
                 ]),
             ];
+
+            // Sent only when there IS one. Stripe sets no unit amount on a
+            // `tiered` or `custom_unit_amount` price — the tiers carry the money
+            // — and passing `unit_amount` alongside `tiers` is an API error.
+            // Passing 0 instead would be worse: a free price, silently.
+            if ($price->unit_amount !== null) {
+                $stripePriceData['unit_amount'] = (int) $price->unit_amount;
+            }
 
             // Stripe Prices support lookup_key NATIVELY, and the metadata copy
             // above is not a substitute: `prices.list(lookup_keys: [...])` only
@@ -198,7 +205,13 @@ class StripeCatalogService
                     $existingPrice = $this->stripe->prices->retrieve($price->external_id);
 
                     // Compare key fields to see if we need a new price
-                    $pricingChanged = $existingPrice->unit_amount !== $price->unit_amount
+                    // Both sides normalised to null: Stripe returns
+                    // `unit_amount: null` for a tiered price, and this side may
+                    // hold null or an integer that arrived from JSON as a
+                    // string. `!==` between null and 0 is a difference; between
+                    // "1999" and 1999 it is also a difference, and either one
+                    // archives a live price and churns its id for nothing.
+                    $pricingChanged = ! self::sameAmount($existingPrice->unit_amount, $price->unit_amount)
                         || $existingPrice->currency !== strtolower($price->currency)
                         || ($price->type === Price::TYPE_RECURRING && (
                             $existingPrice->recurring->interval !== $price->recurring_interval
@@ -284,6 +297,31 @@ class StripeCatalogService
         }
 
         return $product->fresh();
+    }
+
+    /**
+     * Do two unit amounts mean the same money?
+     *
+     * `null` is a real value here — a `tiered` or `custom_unit_amount` price has
+     * no unit amount, and Stripe returns null for it — so `null` and `0` must
+     * compare as DIFFERENT: one is "the tiers carry the money", the other is
+     * free.
+     *
+     * Everything non-null is compared as an integer. The two sides come from
+     * different places: Stripe's SDK hands back an int, while this side may hold
+     * a numeric string depending on the driver and the cast. `!==` between
+     * `"1999"` and `1999` is a difference, and a false difference here archives
+     * a live price and creates a replacement, churning the price id and
+     * orphaning whatever referenced it — silently. That is the same failure the
+     * `sameShape` comparison below exists to prevent, on a scalar.
+     */
+    protected static function sameAmount(mixed $a, mixed $b): bool
+    {
+        if ($a === null || $b === null) {
+            return $a === null && $b === null;
+        }
+
+        return (int) $a === (int) $b;
     }
 
     /** Deep equality that ignores map key order. Lists keep theirs. */

@@ -90,21 +90,50 @@ it('rolls back cleanly when the tables are prefixed', function () {
         ->and(Schema::hasTable('catalog_prices'))->toBeFalse();
 });
 
-it('drops only lookup_key when rolling back that migration alone', function () {
+it('rolls the ALTER migrations back off the configured tables, leaving them standing', function () {
     useCatalogPrefix();
 
     $this->migrateCatalog();
 
-    // One step back is the lookup_key migration; the create migrations stay.
+    // Three migrations alter the created tables rather than creating them:
+    // lookup_key, the nullable unit_amount, and the advanced-pricing columns.
+    // Rolling all three back must leave the four tables in place — a `down()`
+    // that names a literal table drops nothing here and the assertions below
+    // catch it.
     $this->artisan('migrate:rollback', [
         '--path' => realpath(__DIR__.'/../../database/migrations'),
         '--realpath' => true,
-        '--step' => 1,
+        '--step' => 3,
     ])->run();
 
     expect(Schema::hasTable('catalog_products'))->toBeTrue()
         ->and(Schema::hasColumn('catalog_products', 'lookup_key'))->toBeFalse()
-        ->and(Schema::hasColumn('catalog_prices', 'lookup_key'))->toBeFalse();
+        ->and(Schema::hasColumn('catalog_products', 'last_synced_at'))->toBeFalse()
+        ->and(Schema::hasColumn('catalog_prices', 'lookup_key'))->toBeFalse()
+        ->and(Schema::hasColumn('catalog_prices', 'billing_scheme'))->toBeFalse()
+        ->and(Schema::hasColumn('catalog_prices', 'tiers'))->toBeFalse();
+});
+
+it('creates the advanced-pricing columns the models have always referenced', function () {
+    useCatalogPrefix();
+
+    $this->migrateCatalog();
+
+    // `billing_scheme`, `tiers`, `tiers_mode`, `transform_quantity`,
+    // `custom_unit_amount`, `pricing_model` and `nickname` were fillable, cast
+    // and branched on by StripeCatalogService, with no column behind any of
+    // them — the same defect as `lookup_key` (#4), seven more times. Writing
+    // threw; reading returned null forever, so the `'tiered'` branch could
+    // never fire and the whole advanced-pricing feature set was dead.
+    foreach ([
+        'billing_scheme', 'tiers', 'tiers_mode', 'transform_quantity',
+        'custom_unit_amount', 'pricing_model', 'nickname', 'last_synced_at',
+    ] as $column) {
+        expect(Schema::hasColumn('catalog_prices', $column))
+            ->toBeTrue("catalog_prices is missing `{$column}`, which the Price model declares");
+    }
+
+    expect(Schema::hasColumn('catalog_products', 'last_synced_at'))->toBeTrue();
 });
 
 it('still uses the default table names when nothing is configured', function () {

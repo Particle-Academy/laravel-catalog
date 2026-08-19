@@ -32,7 +32,12 @@ return new class extends Migration
             // Stripe Price attributes
             $table->boolean('active')->default(true);
             $table->string('currency', 3)->default('USD');
-            $table->unsignedInteger('unit_amount'); // Price in cents
+            // Nullable, because Stripe sets NO unit amount on a `tiered` or
+            // `custom_unit_amount` price -- the tiers carry the money. Bigint
+            // because unsignedInteger caps at about $42.9M, and a great deal
+            // less in a zero-decimal currency. Both are strict widenings; see
+            // 2026_08_19_000001_make_price_unit_amount_nullable.
+            $table->unsignedBigInteger('unit_amount')->nullable(); // minor units
 
             // Recurring subscription fields (nullable for one-time prices)
             $table->string('recurring_interval')->nullable(); // month, year

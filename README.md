@@ -1,7 +1,8 @@
-[![Powered by Tynn](https://img.shields.io/endpoint?url=https%3A%2F%2Ftynn.ai%2Fo%2Fparticle-academy%2Flaravel-catalog%2Fbadge.json)](https://tynn.ai/o/particle-academy/laravel-catalog)
-
-[![Fancy UI suite](art/fancy-ui.svg)](https://particle.academy)
 # Laravel Catalog Package
+
+[![Fancified](art/fancified.svg)](https://particle.academy)
+
+[![Powered by Tynn](https://img.shields.io/endpoint?url=https%3A%2F%2Ftynn.ai%2Fo%2Fparticle-academy%2Flaravel-catalog%2Fbadge.json)](https://tynn.ai/o/particle-academy/laravel-catalog)
 
 A Laravel package for managing Stripe catalog (Products and Prices) via a facade API. Built for apps that bring their own UI.
 
@@ -46,8 +47,8 @@ A Laravel package for managing Stripe catalog (Products and Prices) via a facade
 
 ## Requirements
 
-- Laravel 11+, 12+, or 13+
-- PHP 8.2+
+- Laravel 13+
+- PHP 8.4+
 - Laravel Cashier ^15.0 or ^16.0
 - Stripe PHP SDK ^13.0, ^16.0, or ^17.0
 
@@ -953,7 +954,7 @@ laravel-catalog/
 
 ## Integration with FMS
 
-Laravel Catalog integrates seamlessly with the [Laravel Feature Management System (FMS)](https://github.com/particle-academy/laravel-fms) package for feature-based access control.
+Laravel Catalog integrates seamlessly with the [Laravel Feature Management System (FMS)](https://github.com/Particle-Academy/laravel-feature-management-system) package for feature-based access control.
 
 ### Installing FMS
 
@@ -1045,7 +1046,7 @@ Route::prefix('admin')->middleware([
 });
 ```
 
-For more detailed FMS integration examples, see the [FMS Integration Guide](https://github.com/particle-academy/laravel-fms/blob/main/INTEGRATION.md).
+For more detailed FMS integration examples, see the [FMS Integration Guide](https://github.com/Particle-Academy/laravel-feature-management-system/blob/main/INTEGRATION.md).
 
 ## Broadcasting
 

@@ -9,10 +9,10 @@ A Laravel package for managing Stripe catalog (Products and Prices) via a facade
 > **Important**: Every Product must have at least one Price before it can be synced to Stripe. Plans are Products with recurring Prices - there is no separate Plan model.
 
 <!-- fancy-agents-note:start -->
-> **For agents.** Every Fancy package, this one included, is listed on the
-> Fancy MCP catalog server at `https://ui.particle.academy/mcp` (streamable HTTP, no API key;
-> MCP id `fancy-ui`), with install commands and docs. How an agent installs
-> and uses this package is in [AGENTS.md](https://github.com/Particle-Academy/laravel-catalog/blob/main/AGENTS.md).
+> **For agents.** This package is listed on the Fancy MCP catalog server at
+> `https://ui.particle.academy/mcp` (streamable HTTP, no API key; MCP id `fancy-ui`),
+> with install commands and docs, alongside the rest of the kit. How an agent
+> installs and uses this package is in [AGENTS.md](https://github.com/Particle-Academy/laravel-catalog/blob/main/AGENTS.md).
 <!-- fancy-agents-note:end -->
 
 ## Table of Contents

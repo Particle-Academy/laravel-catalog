@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schema;
 
 /**
@@ -100,11 +101,11 @@ it('rolls the ALTER migrations back off the configured tables, leaving them stan
     // Rolling all three back must leave the four tables in place — a `down()`
     // that names a literal table drops nothing here and the assertions below
     // catch it.
-    $this->artisan('migrate:rollback', [
+    Artisan::call('migrate:rollback', [
         '--path' => realpath(__DIR__.'/../../database/migrations'),
         '--realpath' => true,
         '--step' => 3,
-    ])->run();
+    ]);
 
     expect(Schema::hasTable('catalog_products'))->toBeTrue()
         ->and(Schema::hasColumn('catalog_products', 'lookup_key'))->toBeFalse()
@@ -159,7 +160,7 @@ it('skips a table that does not exist rather than failing the run', function () 
     $this->artisan('migrate', [
         '--path' => realpath(__DIR__.'/../../database/migrations/2026_07_27_000001_add_lookup_key_to_catalog_tables.php'),
         '--realpath' => true,
-    ])->run();
+    ]);
 
     expect(Schema::hasColumn('catalog_products', 'lookup_key'))->toBeTrue()
         ->and(Schema::hasTable('catalog_prices'))->toBeFalse();

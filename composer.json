@@ -11,8 +11,7 @@
         "particle-academy/laravel-fms": ">=0.2 <2.0"
     },
     "require-dev": {
-        "orchestra/testbench": "^9.0|^10.0|^11.0",
-        "pestphp/pest": "^3.0|^4.0"
+        "pestphp/pest": "^5.0"
     },
     "autoload": {
         "psr-4": {
@@ -23,6 +22,9 @@
         "psr-4": {
             "LaravelCatalog\\Tests\\": "tests/"
         }
+    },
+    "scripts": {
+        "test": "pest"
     },
     "extra": {
         "laravel": {

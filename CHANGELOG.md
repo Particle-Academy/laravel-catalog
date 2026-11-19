@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Rebranded the display name to Fancy Dev Kit (README and package description). Package names, the npm scope, URLs and the `fancy-ui` MCP id are unchanged.
 - **Docs:** `AGENTS.md` added: the guide to using this package (install, its entries on the Fancy MCP catalog server, API essentials, traps). `CONTRIBUTING.md` added for the contributor notes, with `CLAUDE.md` as a symlink to it. The README points to the MCP server and to `AGENTS.md`. No code changed; nothing to do.
 - CI: re-pin org third-party allowlist to 2614224
+- Tests: the Feature suite boots a first-party Laravel kernel (`tests/TestCase.php`) instead of `orchestra/testbench`, which is removed from `require-dev`; Pest moves to `^5.0`, and `composer test` now runs it. The migration helpers call `Artisan::call()` rather than a mocked console. Same 29 tests, same 116 assertions. No runtime change; nothing to do.
 
 ## 0.13.0 - 2026-08-19
 

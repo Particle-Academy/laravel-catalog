@@ -2,27 +2,72 @@
 
 namespace LaravelCatalog\Tests;
 
+use Illuminate\Contracts\Console\Kernel;
+use Illuminate\Foundation\Application;
+use Illuminate\Foundation\Bootstrap\LoadConfiguration;
+use Illuminate\Foundation\Configuration\Exceptions;
+use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
+use Illuminate\Support\Facades\Artisan;
 use LaravelCatalog\CatalogServiceProvider;
-use Orchestra\Testbench\TestCase as Orchestra;
 
-abstract class TestCase extends Orchestra
+/**
+ * A hand-built Laravel kernel: laravel/framework only, no orchestra/testbench
+ * (the same approach as change-council's and fancy-sign's harnesses). In-memory
+ * SQLite, array drivers, blank provider keys: nothing leaves the process, and
+ * nothing reaches Stripe.
+ */
+abstract class TestCase extends BaseTestCase
 {
     /**
-     * @param  \Illuminate\Foundation\Application  $app
-     * @return array<int, class-string>
+     * Artisan output is not mocked: that path needs Mockery, which arrived
+     * only through testbench.
      */
-    protected function getPackageProviders($app): array
+    public $mockConsoleOutput = false;
+
+    public function createApplication(): Application
     {
-        return [CatalogServiceProvider::class];
+        $base = sys_get_temp_dir().DIRECTORY_SEPARATOR.'laravel-catalog-tests';
+        foreach (['app', 'config', 'bootstrap/cache', 'storage/framework/views', 'storage/framework/sessions', 'storage/logs'] as $dir) {
+            if (! is_dir($base.'/'.$dir)) {
+                mkdir($base.'/'.$dir, 0777, true);
+            }
+        }
+        // An empty .env: the framework reads one, and nothing in it may come from the machine.
+        file_put_contents($base.'/.env', '');
+
+        $app = Application::configure(basePath: $base)
+            ->withProviders([CatalogServiceProvider::class], withBootstrapProviders: false)
+            ->withMiddleware(static function (Middleware $middleware): void {})
+            ->withExceptions(static function (Exceptions $exceptions): void {})
+            ->create();
+
+        $app->afterBootstrapping(LoadConfiguration::class, function (Application $app): void {
+            $app['env'] = 'testing';
+            $this->defineEnvironment($app);
+        });
+
+        $app->make(Kernel::class)->bootstrap();
+
+        return $app;
     }
 
-    /**
-     * @param  \Illuminate\Foundation\Application  $app
-     */
-    protected function defineEnvironment($app): void
+    protected function defineEnvironment(Application $app): void
     {
-        $app['config']->set('database.default', 'testing');
-        $app['config']->set('database.connections.testing', [
+        $config = $app['config'];
+
+        $config->set('app.env', 'testing');
+        $config->set('app.key', 'base64:'.base64_encode(str_repeat('k', 32)));
+        $config->set('cache.default', 'array');
+        $config->set('session.driver', 'array');
+        $config->set('mail.default', 'array');
+        $config->set('services.anthropic.key', '');
+        $config->set('services.openai.key', '');
+        $config->set('cashier.key', '');
+        $config->set('cashier.secret', '');
+
+        $config->set('database.default', 'testing');
+        $config->set('database.connections.testing', [
             'driver' => 'sqlite',
             'database' => ':memory:',
             'prefix' => '',
@@ -40,17 +85,17 @@ abstract class TestCase extends Orchestra
      */
     protected function migrateCatalog(): void
     {
-        $this->artisan('migrate', [
+        Artisan::call('migrate', [
             '--path' => realpath(__DIR__.'/../database/migrations'),
             '--realpath' => true,
-        ])->run();
+        ]);
     }
 
     protected function rollbackCatalog(): void
     {
-        $this->artisan('migrate:rollback', [
+        Artisan::call('migrate:rollback', [
             '--path' => realpath(__DIR__.'/../database/migrations'),
             '--realpath' => true,
-        ])->run();
+        ]);
     }
 }
